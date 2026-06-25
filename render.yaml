@@ -4,28 +4,29 @@
 # as a single web service. Render builds the image, runs it, and gives you
 # a public https:// URL — no ngrok needed for a deployed instance.
 #
-# IMPORTANT — read before deploying:
-#  1. This app writes run history to SQLite and to outputs/ (screenshots,
-#     videos, reports) on local disk. Render's filesystem is EPHEMERAL on
-#     every plan except when a persistent disk is attached — without one,
-#     all of that is wiped on every redeploy and on most restarts. The
-#     `disk:` block below attaches one. Free-tier "Web Service" instances
-#     do NOT support persistent disks — you need at least the Starter plan
-#     for the disk to actually attach. On Free, the app still runs fine,
-#     it just won't remember past runs across restarts.
-#  2. Free-tier Render web services spin down after ~15 min of no traffic
-#     and take ~30-60s to wake back up on the next request. Fine for a
-#     personal/demo tool, not for "always-on" use.
-#  3. Set your real secrets in the Render dashboard (Environment tab) —
-#     never commit them here. envVars below are just declarations of what
-#     exists; sync: false means "I'll type the value in the dashboard."
+# Currently configured for Render's FREE plan:
+#  - No persistent disk: run history (SQLite) and outputs/ (screenshots,
+#    videos, reports) are wiped on every redeploy and most restarts.
+#    The app still works fine, it just won't remember past runs across
+#    restarts. To keep history, upgrade the service to Starter or above
+#    in the Render dashboard and add back a `disk:` block:
+#      disk:
+#        name: flowlens-data
+#        mountPath: /app/outputs
+#        sizeGB: 1
+#  - Free-tier web services spin down after ~15 min of no traffic and take
+#    ~30-60s to wake back up on the next request. Fine for a personal/demo
+#    tool, not for "always-on" use.
+#  - Set your real secrets in the Render dashboard (Environment tab) —
+#    never commit them here. envVars below are just declarations of what
+#    exists; sync: false means "I'll type the value in the dashboard."
 
 services:
   - type: web
     name: flowlens-ai
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter          # change to "free" to try it without a persistent disk
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: GEMINI_API_KEY
@@ -40,7 +41,3 @@ services:
         sync: false         # optional — fill in with your onrender.com URL after first deploy, used only in notifications
       - key: NOTIFY_WEBHOOK_URL
         sync: false         # optional — Slack/Discord-style webhook for run-finished notifications
-    disk:
-      name: flowlens-data
-      mountPath: /app/outputs
-      sizeGB: 1
