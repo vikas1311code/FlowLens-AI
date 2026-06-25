@@ -1,0 +1,46 @@
+# render.yaml — Render Blueprint for FlowLens-AI
+#
+# This deploys the existing Dockerfile (Playwright + Chromium base image)
+# as a single web service. Render builds the image, runs it, and gives you
+# a public https:// URL — no ngrok needed for a deployed instance.
+#
+# IMPORTANT — read before deploying:
+#  1. This app writes run history to SQLite and to outputs/ (screenshots,
+#     videos, reports) on local disk. Render's filesystem is EPHEMERAL on
+#     every plan except when a persistent disk is attached — without one,
+#     all of that is wiped on every redeploy and on most restarts. The
+#     `disk:` block below attaches one. Free-tier "Web Service" instances
+#     do NOT support persistent disks — you need at least the Starter plan
+#     for the disk to actually attach. On Free, the app still runs fine,
+#     it just won't remember past runs across restarts.
+#  2. Free-tier Render web services spin down after ~15 min of no traffic
+#     and take ~30-60s to wake back up on the next request. Fine for a
+#     personal/demo tool, not for "always-on" use.
+#  3. Set your real secrets in the Render dashboard (Environment tab) —
+#     never commit them here. envVars below are just declarations of what
+#     exists; sync: false means "I'll type the value in the dashboard."
+
+services:
+  - type: web
+    name: flowlens-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter          # change to "free" to try it without a persistent disk
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false         # set this in Render's dashboard, not here
+      - key: DASHBOARD_API_KEY
+        sync: false         # set this too — without it, your public URL has no auth at all
+      - key: BLOCK_PRIVATE_TARGETS
+        value: "true"        # SSRF defense-in-depth; safe default once this is public on the internet
+      - key: MAX_CONCURRENT_RUNS
+        value: "1"            # raise only if you've sized the instance for it — each run spawns a real Chromium
+      - key: PUBLIC_DASHBOARD_URL
+        sync: false         # optional — fill in with your onrender.com URL after first deploy, used only in notifications
+      - key: NOTIFY_WEBHOOK_URL
+        sync: false         # optional — Slack/Discord-style webhook for run-finished notifications
+    disk:
+      name: flowlens-data
+      mountPath: /app/outputs
+      sizeGB: 1

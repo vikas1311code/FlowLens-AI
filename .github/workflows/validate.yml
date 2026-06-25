@@ -1,0 +1,47 @@
+name: Validate staging build
+
+# Runs ProductValidation OS against your staging URL after every deploy
+# (or on a schedule / manual trigger) and fails the job if a critical bug
+# is found. Adjust `--fail-on` to high/medium if you want a stricter gate.
+
+"on":
+  workflow_dispatch:
+  # Uncomment to also run automatically after a deploy workflow:
+  # workflow_run:
+  #   workflows: ["Deploy to staging"]
+  #   types: [completed]
+  # Uncomment for a nightly check:
+  # schedule:
+  #   - cron: "0 3 * * *"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt --break-system-packages
+          playwright install --with-deps chromium
+
+      - name: Run validation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NOTIFY_WEBHOOK_URL: ${{ secrets.NOTIFY_WEBHOOK_URL }}
+        run: |
+          python3 ci_run.py "${{ secrets.STAGING_URL }}" \
+            --fail-on critical \
+            --steps 12 \
+            --output report.md
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: report.md

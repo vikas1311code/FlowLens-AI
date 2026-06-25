@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProductValidation OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #101111;
+    --bg-1:      #161717;
+    --bg-2:      #1C1D1D;
+    --bg-3:      #262727;
+    --border:    #34302A;
+    --border-soft: #222323;
+    --text:      #E6E2DA;
+    --text-dim:  #A39D90;
+    --text-faint:#6E6A60;
+    --accent:    #A6824A;
+    --accent-2:  #2F6B52;
+    --accent-dim:#7A6238;
+    --accent-soft: rgba(166,130,74,0.16);
+    --accent-line: rgba(166,130,74,0.45);
+    --red:       #7A2B2F;
+    --red-soft:  rgba(122,43,47,0.22);
+    --amber:     #A6824A;
+    --amber-soft:rgba(166,130,74,0.16);
+    --green:     #2F6B52;
+    --green-soft:rgba(47,107,82,0.22);
+    --radius-sm: 7px;
+    --radius:    12px;
+    --radius-lg: 18px;
+    --display:   'Instrument Serif', Georgia, serif;
+    --font:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 20px -10px rgba(0,0,0,.5);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-lg: 0 2px 4px rgba(0,0,0,.45), 0 16px 40px -16px rgba(0,0,0,.55);
+  }
+
+  html, body { background: var(--bg); }
+  body {
+    color: var(--text); font-family: var(--font); min-height: 100vh;
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+    opacity: .035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+  /* ── hero ── */
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px;
+    font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--accent);
+    background: var(--accent-soft); border: 1px solid var(--accent-line);
+    padding: 5px 12px; border-radius: 20px; margin-bottom: 18px;
+  }
+  .hero-eyebrow .pulse-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: pulse 1.6s infinite; }
+  .hero-title {
+    font-family: var(--display); font-style: italic; font-weight: 400;
+    font-size: 40px; letter-spacing: -0.01em; margin-bottom: 12px; line-height: 1.12;
+    color: var(--text);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-eyebrow .pulse-dot { animation: none !important; }
+  }
+
+  .icon { display: inline-block; vertical-align: -3px; flex-shrink: 0; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+
+  /* ── layout ── */
+  .app { display: grid; grid-template-columns: 286px 1fr; min-height: 100vh; }
+  .sidebar {
+    background: var(--bg-1);
+    border-right: 1px solid var(--border-soft);
+    padding: 22px 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .main { padding: 36px 40px; overflow-y: auto; max-height: 100vh; }
+
+  /* ── sidebar ── */
+  .logo {
+    font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
+    padding: 2px 6px 18px; border-bottom: 1px solid var(--border-soft); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    background: var(--bg-3); color: var(--accent); border: 1px solid var(--accent-line);
+  }
+  .logo-sub { font-size: 10.5px; font-weight: 500; color: var(--text-faint); letter-spacing: .04em; text-transform: uppercase; margin-top: 1px; }
+
+  .run-item {
+    padding: 11px 12px; border-radius: var(--radius-sm); cursor: pointer;
+    border: 1px solid transparent; margin-bottom: 6px; transition: all .15s; position: relative;
+  }
+  .run-item:hover { background: var(--bg-2); border-color: var(--border); }
+  .run-item.active { background: var(--accent-soft); border-color: var(--accent-line); }
+  .run-url { font-size: 12.5px; color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .run-meta { font-size: 11px; color: var(--text-faint); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-running { background: var(--amber); animation: pulse 1.1s infinite; }
+  .dot-complete { background: var(--green); }
+  .dot-error { background: var(--red); }
+  .dot-queued { background: var(--text-faint); }
+  .dot-cancelled { background: var(--text-faint); }
+  .sidebar-empty { font-size: 12px; color: var(--text-faint); padding: 10px 8px; }
+  .sidebar-section { font-size: 10.5px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .08em; padding: 4px 8px 8px; }
+
+  /* ── buttons ── */
+  .btn {
+    padding: 11px 18px; border-radius: var(--radius-sm); border: none; cursor: pointer;
+    font-size: 13.5px; font-weight: 600; transition: all .15s; font-family: var(--font);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary {
+    background: var(--accent); color: #1A1410; width: 100%;
+  }
+  .btn-primary:hover { background: #BC9760; }
+  .btn-primary:active { filter: brightness(.95); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-sm { padding: 7px 13px; font-size: 12px; background: var(--bg-2); color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-sm:hover { color: var(--text); border-color: var(--accent); }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 7px 13px; font-size: 12px; }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); background: var(--bg-2); }
+
+  /* ── cards (flat, matte panels) ── */
+  .card {
+    background: var(--bg-1);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 24px; margin-bottom: 20px;
+    position: relative;
+  }
+  .card-title { font-size: 14.5px; font-weight: 700; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; gap: 9px; letter-spacing: -0.01em; }
+  .card-title .icon { color: var(--accent); }
+
+  .form-group { margin-bottom: 16px; }
+  label { font-size: 11.5px; color: var(--text-faint); display: block; margin-bottom: 7px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  input[type=text], input[type=number], input[type=url] {
+    width: 100%; padding: 11px 13px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 14px; outline: none; transition: all .15s; font-family: var(--font);
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  select {
+    width: 100%; padding: 11px 13px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 14px; outline: none; transition: all .15s; font-family: var(--font);
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236E6A60' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center;
+  }
+  select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  select option { background: var(--bg-2); color: var(--text); }
+  input[type=file] { display: none; }
+  .file-label {
+    display: flex; align-items: center; gap: 9px; padding: 11px 13px;
+    background: var(--bg); border: 1px dashed var(--border); border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 13px; color: var(--text-faint); transition: all .15s;
+  }
+  .file-label:hover { border-color: var(--accent); color: var(--text-dim); }
+  .file-label.has-file { color: var(--accent); border-color: var(--accent); border-style: solid; }
+
+  /* ── pipeline preview / tracker ── */
+  .pipeline-list { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+  .pipeline-list .p-step { font-size: 13px; color: var(--text-dim); display: flex; gap: 11px; align-items: center; padding: 7px 4px; }
+  .pipeline-list .p-step .icon { color: var(--text-faint); }
+
+  .tracker { display: flex; align-items: flex-start; gap: 0; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px; }
+  .t-step { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 84px; position: relative; flex-shrink: 0; }
+  .t-line { position: absolute; top: 15px; left: -42px; width: 42px; height: 2px; background: var(--border); z-index: 0; }
+  .t-step:first-child .t-line { display: none; }
+  .t-dot {
+    width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: var(--bg-2); border: 1.5px solid var(--border); color: var(--text-faint); z-index: 1; transition: all .25s;
+  }
+  .t-step.active .t-dot { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); animation: pulse 1.4s infinite; }
+  .t-step.done .t-dot { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+  .t-step.done .t-line, .t-step.active .t-line { background: var(--accent); }
+  .t-label { font-size: 10.5px; color: var(--text-faint); text-align: center; font-weight: 600; letter-spacing: .01em; }
+  .t-step.active .t-label, .t-step.done .t-label { color: var(--text-dim); }
+
+  /* ── stats row ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .stat-card {
+    background: var(--bg-1);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-top { display: flex; align-items: center; justify-content: space-between; }
+  .stat-value { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+  .stat-label { font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .stat-red { color: var(--red); } .stat-amber { color: var(--amber); }
+  .stat-green { color: var(--green); } .stat-blue { color: var(--accent); }
+  .stat-icon { color: var(--text-faint); opacity: .7; }
+
+  /* ── logs ── */
+  .log-box {
+    background: #08070A; border: 1px solid var(--border-soft); border-radius: var(--radius);
+    padding: 16px 18px; font-family: var(--mono); font-size: 12.5px; height: 320px; overflow-y: auto;
+  }
+  .log-line { padding: 3px 0; line-height: 1.65; display: flex; gap: 9px; animation: fadeUp .2s ease; }
+  .log-line .icon { margin-top: 2px; flex-shrink: 0; }
+  .log-phase { color: var(--accent); font-weight: 600; }
+  .log-success { color: var(--green); }
+  .log-error { color: var(--red); }
+  .log-info { color: var(--text-dim); }
+
+  /* ── bugs ── */
+  .bug-list { display: flex; flex-direction: column; gap: 11px; }
+  .bug-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .bug-header { display: flex; align-items: center; gap: 11px; padding: 15px 17px; cursor: pointer; }
+  .bug-header:hover { background: var(--bg-3); }
+  .severity-badge { font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 6px; text-transform: uppercase; white-space: nowrap; letter-spacing: .04em; }
+  .sev-critical, .sev-high { background: var(--red-soft); color: var(--red); }
+  .sev-medium { background: var(--amber-soft); color: var(--amber); }
+  .sev-low { background: var(--green-soft); color: var(--green); }
+  .impact-pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: var(--bg-3); margin-left: auto; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .bug-title { font-size: 14px; font-weight: 600; flex: 1; color: var(--text); }
+  .bug-id { color: var(--text-faint); font-family: var(--mono); font-weight: 500; margin-right: 6px; font-size: 12.5px; }
+  .bug-body { display: none; padding: 4px 17px 19px; border-top: 1px solid var(--border-soft); }
+  .bug-body.open { display: block; animation: fadeUp .2s ease; }
+  .bug-field { margin-top: 13px; }
+  .bug-field-label { font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .bug-field-value { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+  .tag { font-size: 11.5px; padding: 4px 11px; border-radius: 20px; background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); font-family: var(--mono); display: inline-flex; align-items: center; gap: 6px; }
+  .tag-video { color: var(--accent-2); border-color: rgba(47,107,82,.4); }
+  .tag-test { color: var(--accent); border-color: var(--accent-line); }
+  .pm-block { margin-top: 14px; padding: 13px 14px; background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); }
+  .pm-badge { font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 6px; text-transform: uppercase; letter-spacing: .04em; }
+  .pm-violation { background: var(--red-soft); color: var(--red); }
+  .pm-nice { background: var(--amber-soft); color: var(--amber); }
+  .pm-oos { background: var(--bg-3); color: var(--text-faint); }
+  video.repro { width: 100%; max-width: 480px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--border); display: block; }
+
+  /* ── coverage ── */
+  .coverage-bar { background: var(--bg-3); border-radius: 20px; height: 9px; overflow: hidden; margin: 10px 0; }
+  .coverage-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width .6s; }
+  .page-list { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+  .page-row { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--bg); }
+
+  /* ── empty state ── */
+  .empty { text-align: center; padding: 70px 20px; color: var(--text-faint); }
+  .empty .icon { color: var(--text-faint); opacity: .5; margin-bottom: 14px; }
+  .empty-text { font-size: 13.5px; }
+
+  /* ── tabs ── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 22px; background: var(--bg-2); padding: 4px; border-radius: 11px; width: fit-content; border: 1px solid var(--border-soft); }
+  .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text-faint); transition: all .15s; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .tab:hover { color: var(--text-dim); }
+  .tab.active { background: var(--bg-3); color: var(--text); }
+
+  .section-title { font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 13px; }
+  .url-display { font-family: var(--mono); font-size: 12px; color: var(--accent-2); background: var(--bg-2); border: 1px solid var(--border-soft); padding: 5px 11px; border-radius: 6px; display: inline-block; }
+  .status-badge { font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 20px; background: var(--bg-2); border: 1px solid var(--border-soft); display: inline-flex; align-items: center; gap: 7px; }
+
+  /* ── journey ── */
+  .journey-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .journey-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all .15s; box-shadow: var(--shadow-sm); }
+  .journey-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .journey-thumb { width: 100%; height: 140px; object-fit: cover; object-position: top; background: var(--bg); display: block; }
+  .journey-info { padding: 12px 14px; }
+  .journey-step { font-size: 10.5px; color: var(--text-faint); font-family: var(--mono); margin-bottom: 6px; }
+  .health-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 7px; }
+  .health-good { background: var(--green-soft); color: var(--green); }
+  .health-warning { background: var(--amber-soft); color: var(--amber); }
+  .health-critical { background: var(--red-soft); color: var(--red); }
+  .journey-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+  .lightbox { position: fixed; inset: 0; background: rgba(5,5,8,.92); display: none; align-items: center; justify-content: center; z-index: 100; padding: 40px; backdrop-filter: blur(4px); }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 86vh; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 30px 80px -20px rgba(0,0,0,.7); }
+  .lightbox-close { position: absolute; top: 28px; right: 32px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--text); cursor: pointer; }
+  .lightbox-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── report ── */
+  .report-box { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 28px 32px; font-size: 13.5px; line-height: 1.7; color: var(--text-dim); }
+  .report-box h1 { font-size: 19px; color: var(--text); margin-bottom: 14px; }
+  .report-box h2 { font-size: 15px; color: var(--text); margin: 22px 0 11px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+  .report-box h3 { font-size: 13.5px; color: var(--text); margin: 16px 0 8px; }
+  .report-box p { margin-bottom: 10px; }
+  .report-box table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 12.5px; }
+  .report-box th, .report-box td { padding: 7px 11px; border: 1px solid var(--border-soft); text-align: left; }
+  .report-box th { background: var(--bg-3); color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .report-box code { font-family: var(--mono); background: var(--bg-3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--accent-2); }
+  .report-box strong { color: var(--text); }
+
+  .divider { height: 1px; background: var(--border-soft); margin: 22px 0; }
+
+  /* ── regression banner ── */
+  .regression-banner { display: flex; gap: 18px; align-items: center; background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 13px 17px; margin-bottom: 16px; font-size: 12.5px; flex-wrap: wrap; }
+  .regression-stat { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+  .regression-stat.new { color: var(--red); }
+  .regression-stat.resolved { color: var(--green); }
+  .regression-stat.persisting { color: var(--amber); }
+  .regression-meta { color: var(--text-faint); margin-left: auto; font-size: 11.5px; }
+
+  /* ── accessibility tab ── */
+  .a11y-page-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
+  .a11y-page-header { padding: 14px 17px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .a11y-page-header:hover { background: var(--bg-3); }
+  .a11y-page-url { font-family: var(--mono); font-size: 12.5px; color: var(--accent-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .a11y-impact-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
+  .a11y-critical, .a11y-serious { background: var(--red-soft); color: var(--red); }
+  .a11y-moderate { background: var(--amber-soft); color: var(--amber); }
+  .a11y-minor { background: var(--bg-3); color: var(--text-faint); }
+  .a11y-violation-row { padding: 11px 17px; border-top: 1px solid var(--border-soft); font-size: 12.5px; }
+  .a11y-violation-title { font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .a11y-violation-desc { color: var(--text-dim); line-height: 1.5; margin-bottom: 4px; }
+  .a11y-violation-meta { color: var(--text-faint); font-size: 11px; display: flex; gap: 12px; align-items: center; }
+  .a11y-violation-meta a { color: var(--accent-2); text-decoration: none; }
+
+  /* ── trends ── */
+  .url-pick-row { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: var(--radius-sm); background: var(--bg); border: 1px solid var(--border-soft); margin-bottom: 8px; cursor: pointer; transition: all .15s; }
+  .url-pick-row:hover { border-color: var(--accent); }
+  .url-pick-row.active { border-color: var(--accent); background: var(--accent-soft); }
+  .chart-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 22px 24px; margin-top: 16px; box-shadow: var(--shadow); }
+  .chart-legend { display: flex; gap: 16px; margin-bottom: 14px; font-size: 12px; }
+  .chart-legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .chart-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon" id="logoIconSlot"></span>
+      <div>
+        <div>ProductValidation OS</div>
+        <div class="logo-sub">Autonomous QA Agent</div>
+      </div>
+    </div>
+
+    <button class="btn-ghost btn" style="width:100%; margin-bottom:8px; justify-content:flex-start;" onclick="toggleApiKeyBox()" id="apiKeyBtnSlot"></button>
+    <div id="apiKeyBox" style="display:none; margin-bottom:10px;">
+      <input type="text" id="apiKeyInput" placeholder="X-API-Key value" style="margin-bottom:7px;">
+      <input type="password" id="geminiKeyInput" placeholder="Your Gemini API key (optional)" style="margin-bottom:7px;" autocomplete="off">
+      <select id="geminiModelInput" style="margin-bottom:7px;"></select>
+      <div style="font-size:10.5px; color:var(--text-faint); margin-bottom:9px; line-height:1.45;">
+        Stored only in this browser. Leave the Gemini key blank to use the server's own key.
+      </div>
+      <button class="btn btn-sm" style="width:100%;" onclick="saveApiKey()" id="apiKeySaveSlot"></button>
+    </div>
+
+    <button class="btn btn-primary" onclick="showNewRun()" id="newRunBtn"></button>
+    <button class="btn-ghost btn" style="width:100%; margin-top:8px; justify-content:flex-start;" onclick="showTrends()" id="trendsBtn"></button>
+    <div class="sidebar-section" style="margin-top:14px;">Recent Runs</div>
+    <div id="runList" style="overflow-y:auto; flex:1;"></div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ════════════ NEW RUN VIEW ════════════ -->
+    <div id="newRunView">
+      <div style="max-width:640px; margin:0 auto;">
+        <div style="text-align:center; margin-bottom:30px;">
+          <span class="hero-eyebrow"><span class="pulse-dot"></span>Multi-agent QA, live</span>
+          <h1 class="hero-title">Validate any product, autonomously</h1>
+          <p style="color:var(--text-faint); font-size:14px; max-width:480px; margin:0 auto;">Point it at a URL. A crew of AI agents crawls it, finds bugs, argues about which ones matter, and ships you a report.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title" id="cfgTitleSlot"></div>
+          <div class="form-group">
+            <label>Target URL</label>
+            <input type="url" id="urlInput" placeholder="https://your-app.com" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Max Steps</label>
+            <input type="number" id="stepsInput" value="10" min="1" max="50">
+          </div>
+          <div class="form-group">
+            <label>PRD Document <span style="color:var(--text-faint); font-weight:400; text-transform:none;">(optional — lets the PM agent check feature coverage)</span></label>
+            <label class="file-label" id="fileLabel" for="prdFile"></label>
+            <input type="file" id="prdFile" accept=".md,.txt" onchange="onFileChosen()">
+          </div>
+
+          <div class="form-group">
+            <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:0;" onclick="toggleLoginSection()">
+              <span id="loginToggleLabelSlot"></span>
+              <span id="loginToggleIcon"></span>
+            </label>
+            <div id="loginSection" style="display:none; margin-top:12px;">
+              <div class="form-group"><label>Login Page URL</label><input type="url" id="loginUrlInput" placeholder="https://your-app.com/login"></div>
+              <div class="form-group"><label>Username / Email</label><input type="text" id="loginUserInput" placeholder="test@example.com" autocomplete="off"></div>
+              <div class="form-group"><label>Password</label><input type="password" id="loginPassInput" placeholder="••••••••" autocomplete="off"></div>
+              <div onclick="toggleAdvancedSelectors()" style="cursor:pointer; font-size:12px; color:var(--accent-2); margin-bottom:10px;" id="advSelectorsToggleSlot"></div>
+              <div id="advancedSelectors" style="display:none;">
+                <div class="form-group"><label>Username field selector</label><input type="text" id="loginUserSelInput" placeholder="auto-detected if left blank"></div>
+                <div class="form-group"><label>Password field selector</label><input type="text" id="loginPassSelInput" placeholder="auto-detected if left blank"></div>
+                <div class="form-group"><label>Submit button selector</label><input type="text" id="loginSubmitSelInput" placeholder="auto-detected if left blank"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="startRun()" id="startBtn"></button>
+        </div>
+
+        <div class="card">
+          <div class="card-title" id="pipelineTitleSlot"></div>
+          <div class="pipeline-list" id="pipelinePreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ TRENDS VIEW ════════════ -->
+    <div id="trendsView" style="display:none;">
+      <div style="max-width:760px; margin:0 auto;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+          <button class="btn-ghost btn" onclick="showNewRun()" id="trendsBackBtnSlot"></button>
+          <h1 style="font-size:21px; font-weight:800;">Trends</h1>
+        </div>
+        <div class="card">
+          <div class="card-title" id="trendsPickerTitleSlot"></div>
+          <div id="urlPickerList"></div>
+        </div>
+        <div id="trendsChartsWrap"></div>
+      </div>
+    </div>
+
+    <!-- ════════════ RUN DETAIL VIEW ════════════ -->
+    <div id="runView" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="btn-ghost btn" onclick="showNewRun()" id="backBtnSlot"></button>
+          <span class="url-display" id="runUrlLabel"></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn btn-sm" id="cancelBtn" style="display:none; color:var(--red); border-color:rgba(255,107,107,.4);" onclick="cancelCurrentRun()"></button>
+          <span class="status-badge" id="runStatusBadge"></span>
+        </div>
+      </div>
+      <div style="height:22px;"></div>
+
+      <div class="tracker" id="trackerRow"></div>
+
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <div class="tabs" id="tabRow"></div>
+
+      <div id="tabContent">
+        <div id="tab-logs" class="tab-panel"><div class="log-box" id="logBox"></div></div>
+
+        <div id="tab-bugs" class="tab-panel" style="display:none;">
+          <div id="regressionBanner"></div>
+          <div class="bug-list" id="bugList"></div>
+        </div>
+
+        <div id="tab-journey" class="tab-panel" style="display:none;"><div class="journey-grid" id="journeyGrid"></div></div>
+
+        <div id="tab-a11y" class="tab-panel" style="display:none;"><div id="a11yContent"></div></div>
+
+        <div id="tab-perf" class="tab-panel" style="display:none;"><div id="perfContent"></div></div>
+
+        <div id="tab-responsive" class="tab-panel" style="display:none;"><div class="journey-grid" id="responsiveGrid"></div></div>
+
+        <div id="tab-coverage" class="tab-panel" style="display:none;"><div class="card" id="coverageContent"></div></div>
+
+        <div id="tab-tests" class="tab-panel" style="display:none;"><div class="bug-list" id="testsList"></div></div>
+
+        <div id="tab-report" class="tab-panel" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+            <button class="btn btn-sm" onclick="downloadReport()" id="downloadBtnSlot"></button>
+          </div>
+          <div class="report-box" id="reportBox"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <div class="lightbox-close" onclick="closeLightbox(event)" id="lightboxCloseSlot"></div>
+  <img id="lightboxImg" src="" onclick="event.stopPropagation()">
+</div>
+
+<script>
+const API = window.location.origin;
+
+/* ════════════════════ SVG ICON SYSTEM ════════════════════
+   Every icon is a tiny stroke-based outline in a 24x24 viewBox,
+   colored via currentColor so CSS controls it. No emoji anywhere. */
+const ICONS = {
+  search:       '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.4" y2="16.4"/>',
+  send:         '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="none"/>',
+  fileText:     '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>',
+  upload:       '<path d="M12 16V4"/><path d="M6.5 9.5L12 4l5.5 5.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  globe:        '<circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  eye:          '<path d="M2.5 12S6.5 5.5 12 5.5 21.5 12 21.5 12 17.5 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  clipboard:    '<path d="M9 4h6a1 1 0 0 1 1 1v1.2H8V5a1 1 0 0 1 1-1z"/><rect x="6" y="6.2" width="12" height="15" rx="1.6"/><path d="M9.3 14l2 2 4.2-4.6"/>',
+  shield:       '<path d="M12 3.3l7.5 2.8v5.7c0 4.6-3.2 7.5-7.5 8.4-4.3-.9-7.5-3.8-7.5-8.4V6.1z"/><path d="M8.7 12l2.2 2.2 4.4-4.7"/>',
+  briefcase:    '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6.2A2 2 0 0 1 10 4.2h4A2 2 0 0 1 16 6.2V8"/><line x1="3" y1="13.2" x2="21" y2="13.2"/>',
+  scale:        '<path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7l-3 6.2a3.6 3.6 0 0 0 7.2 0z"/><path d="M19 7l-3 6.2a3.6 3.6 0 0 0 7.2 0z"/><path d="M7.5 21h9"/>',
+  barChart:     '<line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="14"/>',
+  video:        '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10.3l6-3.2v9.8l-6-3.2"/>',
+  flask:        '<path d="M9.5 2.5v6.2L4 19.2a2 2 0 0 0 1.8 2.9h12.4a2 2 0 0 0 1.8-2.9l-5.5-10.5V2.5"/><line x1="8" y1="2.5" x2="16" y2="2.5"/><line x1="6.8" y1="14.5" x2="17.2" y2="14.5"/>',
+  bug:          '<ellipse cx="12" cy="13.5" rx="6" ry="6.8"/><line x1="12" y1="6.7" x2="12" y2="3"/><line x1="8.3" y1="5" x2="10" y2="7.8"/><line x1="15.7" y1="5" x2="14" y2="7.8"/><line x1="2.8" y1="11.5" x2="6" y2="11.5"/><line x1="18" y1="11.5" x2="21.2" y2="11.5"/><line x1="3.2" y1="17.5" x2="6.2" y2="16.5"/><line x1="17.8" y1="17.5" x2="20.8" y2="16.5"/>',
+  checkCircle:  '<circle cx="12" cy="12" r="9.3"/><path d="M7.8 12.4l2.6 2.6L16.3 9"/>',
+  xCircle:      '<circle cx="12" cy="12" r="9.3"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>',
+  clock:        '<circle cx="12" cy="12" r="9.3"/><path d="M12 6.8v5.2l3.6 2.1"/>',
+  mapPin:       '<path d="M12 21.5s7.2-6.7 7.2-12.4a7.2 7.2 0 1 0-14.4 0c0 5.7 7.2 12.4 7.2 12.4z"/><circle cx="12" cy="9.1" r="2.5"/>',
+  alertTriangle:'<path d="M12 2.8l10 17.6H2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r=".55" fill="currentColor" stroke="none"/>',
+  info:         '<circle cx="12" cy="12" r="9.3"/><line x1="12" y1="11" x2="12" y2="16.3"/><circle cx="12" cy="7.5" r=".55" fill="currentColor" stroke="none"/>',
+  play:         '<circle cx="12" cy="12" r="9.3"/><path d="M10 8.3l5.5 3.7L10 15.7z" fill="currentColor" stroke="none"/>',
+  image:        '<rect x="3" y="3" width="18" height="18" rx="2.2"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor" stroke="none"/><path d="M21 16l-5.2-5.2-4 4-3-3-5.8 5.8"/>',
+  terminal:     '<path d="M4 17l5-5-5-5"/><line x1="12" y1="19" x2="20" y2="19"/>',
+  trendingUp:   '<path d="M3 17l6-6 4 4 8-8"/><path d="M16 7h5v5"/>',
+  chevronDown:  '<path d="M6 9l6 6 6-6"/>',
+  download:     '<path d="M12 3.5v12.2"/><path d="M7 11.2l5 5 5-5"/><path d="M4.5 19.5h15"/>',
+  zap:          '<path d="M13 2L4.5 13.4h6L9.5 22 19.5 9.6h-6z"/>',
+  loader:       '<circle cx="12" cy="12" r="9.3" opacity=".25"/><path d="M21.3 12a9.3 9.3 0 0 0-9.3-9.3"/>',
+  x:            '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+  layers:       '<path d="M12 3.3l9.2 4.9-9.2 4.9-9.2-4.9z"/><path d="M3 13.2l9 4.8 9-4.8"/><path d="M3 17.9l9 4.8 9-4.8"/>',
+  arrowRight:   '<line x1="4" y1="12" x2="20" y2="12"/><path d="M14 6l6 6-6 6"/>',
+  lock:         '<rect x="5" y="11" width="14" height="9.5" rx="1.8"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
+  unlock:       '<rect x="5" y="11" width="14" height="9.5" rx="1.8"/><path d="M8 11V7.5a4 4 0 0 1 7.2-2.4"/>',
+  accessibility:'<circle cx="12" cy="12" r="9.3"/><circle cx="12" cy="7.3" r="1.3" fill="currentColor" stroke="none"/><path d="M12 9.3v5.4"/><path d="M7.3 11h9.4"/><path d="M9.7 19l1.6-4.3h1.4l1.6 4.3"/>',
+  externalLink: '<path d="M14 4.5h5.5V10"/><path d="M19.5 4.5l-9 9"/><path d="M17.5 13v4.7a1.8 1.8 0 0 1-1.8 1.8H6.3a1.8 1.8 0 0 1-1.8-1.8V7.3a1.8 1.8 0 0 1 1.8-1.8H11"/>',
+};
+function icon(name, size=16, cls='') {
+  return `<svg class="icon ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||''}</svg>`;
+}
+
+/* ════════════════════ static text slots (icon + label combos) ════════════════════ */
+document.getElementById('logoIconSlot').innerHTML   = icon('search', 16);
+document.getElementById('newRunBtn').innerHTML      = icon('send',14) + ' New Validation Run';
+document.getElementById('cfgTitleSlot').innerHTML   = icon('globe',17) + ' Configure Run';
+document.getElementById('fileLabel').innerHTML      = icon('upload',15) + ' <span id="fileLabelText">Choose a PRD file (.md / .txt)</span>';
+document.getElementById('startBtn').innerHTML       = icon('send',15) + ' Start Validation';
+document.getElementById('pipelineTitleSlot').innerHTML = icon('layers',17) + ' What happens next';
+document.getElementById('backBtnSlot').innerHTML    = '<span style="display:inline-block; transform:rotate(180deg);">'+icon('arrowRight',14)+'</span> All Runs';
+document.getElementById('downloadBtnSlot').innerHTML= icon('download',14) + ' Download .md';
+document.getElementById('lightboxCloseSlot').innerHTML = icon('x',18);
+document.getElementById('apiKeyBtnSlot').innerHTML  = icon('lock',13) + ' <span id="apiKeyBtnText">API Key</span>';
+document.getElementById('apiKeySaveSlot').innerHTML = 'Save';
+document.getElementById('trendsBtn').innerHTML      = icon('trendingUp',14) + ' Trends';
+document.getElementById('loginToggleLabelSlot').innerHTML = icon('lock',13) + ' Requires login? <span style="color:var(--text-faint); font-weight:400; text-transform:none;">(test pages behind a signup wall)</span>';
+document.getElementById('loginToggleIcon').innerHTML = icon('chevronDown',13);
+document.getElementById('advSelectorsToggleSlot').innerHTML = 'Advanced: custom field selectors';
+document.getElementById('trendsBackBtnSlot').innerHTML = '<span style="display:inline-block; transform:rotate(180deg);">'+icon('arrowRight',14)+'</span> Back';
+document.getElementById('trendsPickerTitleSlot').innerHTML = icon('globe',16) + ' Pick a URL to see its history';
+document.getElementById('cancelBtn').innerHTML = icon('x',13) + ' Cancel run';
+
+document.getElementById('pipelinePreview').innerHTML = [
+  ['globe','Crawl the site like a real user — clicking every link & button'],
+  ['eye','Vision agent screenshots + analyzes every page it lands on'],
+  ['clipboard','Checks coverage against your PRD, if one was provided'],
+  ['shield','QA agent reviews every anomaly the crawler flagged'],
+  ['briefcase','PM agent classifies each one against product requirements'],
+  ['scale','Debate agent settles disagreements between QA and PM'],
+  ['barChart','Each confirmed bug gets a business-impact score'],
+  ['video','High-impact bugs get an automatic repro video'],
+  ['flask','A ready-to-run Playwright test is generated per bug'],
+].map(([ic,label]) => `<div class="p-step">${icon(ic,16)} <span>${label}</span></div>`).join('');
+
+const PIPELINE_STAGES = [
+  {key:'crawl',   label:'Crawl',   icon:'globe',     match:/NODE 1|Crawling|Browser started/i},
+  {key:'vision',  label:'Vision',  icon:'eye',       match:/VisionAgent|Vision analysis/i},
+  {key:'prd',     label:'PRD',     icon:'clipboard', match:/NODE 2|PRD Parse|PRDParser/i},
+  {key:'qa',      label:'QA',      icon:'shield',    match:/NODE 3|QA Agent|QAAgent/i},
+  {key:'pm',      label:'PM',      icon:'briefcase', match:/NODE 4|PM Agent|PMAgent/i},
+  {key:'debate',  label:'Debate',  icon:'scale',     match:/NODE 5|Debate/i},
+  {key:'impact',  label:'Impact',  icon:'barChart',  match:/Phase 2|Impact Scoring|ImpactScorer/i},
+  {key:'video',   label:'Video',   icon:'video',     match:/Phase 3|repro video|VideoRecorder/i},
+  {key:'tests',   label:'Tests',   icon:'flask',     match:/Phase 4|Playwright test|TestGenerator/i},
+  {key:'report',  label:'Report',  icon:'fileText',  match:/Phase 5|final report|Writing final/i},
+];
+
+/* ════════════════════ app state ════════════════════ */
+let currentRunId = null;
+let sseSource = null;
+let activeTab = 'logs';
+let trackerMaxIdx = -1;
+let prdFileChosen = null;
+let apiKey = localStorage.getItem('pvos_api_key') || '';
+let geminiKey = localStorage.getItem('pvos_gemini_key') || '';
+let geminiModel = localStorage.getItem('pvos_gemini_model') || '';
+let availableModels = [];
+let loginSectionOpen = false;
+let currentRun = null;     // last full /status payload for the open run
+let pollHandle = null;     // setInterval handle while a run is in progress
+
+const TABS = [
+  {key:'logs',     label:'Live Logs', icon:'terminal'},
+  {key:'bugs',     label:'Bugs',      icon:'bug'},
+  {key:'journey',  label:'Journey',   icon:'eye'},
+  {key:'a11y',     label:'A11y',      icon:'accessibility'},
+  {key:'perf',     label:'Performance', icon:'zap'},
+  {key:'responsive', label:'Responsive', icon:'image'},
+  {key:'coverage', label:'Coverage',  icon:'clipboard'},
+  {key:'tests',    label:'Tests',     icon:'flask'},
+  {key:'report',   label:'Report',    icon:'fileText'},
+];
+document.getElementById('tabRow').innerHTML = TABS.map(t =>
+  `<div class="tab" data-tab="${t.key}" onclick="switchTab('${t.key}')">${icon(t.icon,14)} ${t.label}</div>`
+).join('');
+
+function switchTab(key) {
+  activeTab = key;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === key));
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('tab-'+key).style.display = 'block';
+  if (key === 'report') loadReport();
+  if (key === 'a11y' && currentRun) renderA11y(currentRun.a11y_results || []);
+  if (key === 'perf' && currentRun) renderPerformance(currentRun.performance_results || []);
+  if (key === 'responsive' && currentRun) renderResponsive(currentRun.responsive_results || []);
+}
+
+/* ════════════════════ new run view ════════════════════ */
+function showNewRun() {
+  currentRunId = null;
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+  document.getElementById('newRunView').style.display = 'block';
+  document.getElementById('runView').style.display = 'none';
+  document.getElementById('trendsView').style.display = 'none';
+  document.querySelectorAll('.run-item').forEach(el => el.classList.remove('active'));
+}
+
+/* ── API key (sent as X-API-Key on /run; stored locally on this machine) ──
+   The Gemini key/model below it are also stored locally only (never sent
+   anywhere except as part of a /run request), letting you use your own
+   Gemini key+model for a run instead of whatever's in the server's .env. */
+function toggleApiKeyBox() {
+  const box = document.getElementById('apiKeyBox');
+  const open = box.style.display !== 'none';
+  box.style.display = open ? 'none' : 'block';
+  if (!open) {
+    document.getElementById('apiKeyInput').value = apiKey;
+    document.getElementById('geminiKeyInput').value = geminiKey;
+    loadModelOptions();
+  }
+}
+function saveApiKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  geminiKey = document.getElementById('geminiKeyInput').value.trim();
+  geminiModel = document.getElementById('geminiModelInput').value;
+  localStorage.setItem('pvos_api_key', apiKey);
+  localStorage.setItem('pvos_gemini_key', geminiKey);
+  localStorage.setItem('pvos_gemini_model', geminiModel);
+  document.getElementById('apiKeyBtnText').textContent = apiKey ? 'API Key set' : 'API Key';
+  document.getElementById('apiKeyBox').style.display = 'none';
+}
+async function loadModelOptions() {
+  const select = document.getElementById('geminiModelInput');
+  if (availableModels.length) { renderModelOptions(); return; }
+  try {
+    const headers = {};
+    if (apiKey) headers['X-API-Key'] = apiKey;
+    const res = await fetch(`${API}/models`, { headers });
+    const data = await res.json();
+    availableModels = data.models || [];
+    if (!geminiModel) geminiModel = data.default || '';
+  } catch (e) {
+    availableModels = [];
+  }
+  renderModelOptions();
+}
+function renderModelOptions() {
+  const select = document.getElementById('geminiModelInput');
+  if (!availableModels.length) {
+    select.innerHTML = `<option value="">(server default)</option>`;
+    return;
+  }
+  select.innerHTML = `<option value="">Server default</option>` +
+    availableModels.map(m => `<option value="${m}" ${m===geminiModel?'selected':''}>${m}</option>`).join('');
+}
+(function initApiKeyLabel() {
+  const t = document.getElementById('apiKeyBtnText');
+  if (t) t.textContent = apiKey ? 'API Key set' : 'API Key';
+})();
+
+/* ── optional login-before-crawl section ── */
+function toggleLoginSection() {
+  loginSectionOpen = !loginSectionOpen;
+  document.getElementById('loginSection').style.display = loginSectionOpen ? 'block' : 'none';
+  document.getElementById('loginToggleIcon').style.transform = loginSectionOpen ? 'rotate(180deg)' : 'none';
+}
+function toggleAdvancedSelectors() {
+  const box = document.getElementById('advancedSelectors');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function onFileChosen() {
+  const f = document.getElementById('prdFile').files[0];
+  const label = document.getElementById('fileLabel');
+  const text = document.getElementById('fileLabelText');
+  if (f) {
+    prdFileChosen = f;
+    text.textContent = f.name;
+    label.classList.add('has-file');
+  } else {
+    prdFileChosen = null;
+    text.textContent = 'Choose a PRD file (.md / .txt)';
+    label.classList.remove('has-file');
+  }
+}
+
+async function startRun() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { document.getElementById('urlInput').focus(); return; }
+  const steps = document.getElementById('stepsInput').value || 10;
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.innerHTML = icon('loader',15,'spin') + ' Starting...';
+
+  const fd = new FormData();
+  fd.append('url', url);
+  fd.append('steps', steps);
+  if (prdFileChosen) fd.append('prd', prdFileChosen);
+  if (geminiKey) fd.append('gemini_api_key', geminiKey);
+  if (geminiModel) fd.append('gemini_model', geminiModel);
+
+  if (loginSectionOpen) {
+    const loginUrl = document.getElementById('loginUrlInput').value.trim();
+    if (loginUrl) {
+      fd.append('login_url', loginUrl);
+      fd.append('login_username', document.getElementById('loginUserInput').value);
+      fd.append('login_password', document.getElementById('loginPassInput').value);
+      const us = document.getElementById('loginUserSelInput').value.trim();
+      const ps = document.getElementById('loginPassSelInput').value.trim();
+      const ss = document.getElementById('loginSubmitSelInput').value.trim();
+      if (us) fd.append('login_user_selector', us);
+      if (ps) fd.append('login_pass_selector', ps);
+      if (ss) fd.append('login_submit_selector', ss);
+    }
+  }
+
+  try {
+    const headers = {};
+    if (apiKey) headers['X-API-Key'] = apiKey;
+    const res = await fetch(`${API}/run`, { method: 'POST', body: fd, headers });
+    const data = await res.json();
+    if (!res.ok) { alert(data.detail || 'Could not start run'); return; }
+    await refreshRunList();
+    openRun(data.run_id);
+  } catch (e) {
+    alert('Could not start run: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = icon('send',15) + ' Start Validation';
+  }
+}
+
+/* ════════════════════ run list (sidebar) ════════════════════ */
+async function refreshRunList() {
+  try {
+    const res = await fetch(`${API}/runs`);
+    const runs = await res.json();
+    const box = document.getElementById('runList');
+    if (!runs.length) {
+      box.innerHTML = `<div class="sidebar-empty">No runs yet — start one above.</div>`;
+      return;
+    }
+    box.innerHTML = runs.map(r => {
+      const dot = r.status === 'running' ? 'dot-running' : r.status === 'complete' ? 'dot-complete' : r.status === 'error' ? 'dot-error' : r.status === 'cancelled' ? 'dot-cancelled' : 'dot-queued';
+      const bugCount = r.stats && r.stats.total_bugs != null ? `${r.stats.total_bugs} bugs` : r.status;
+      let host = r.url; try { host = new URL(r.url).hostname; } catch(e) {}
+      return `<div class="run-item ${r.run_id===currentRunId?'active':''}" onclick="openRun('${r.run_id}')">
+        <div class="run-url">${host}</div>
+        <div class="run-meta"><span class="status-dot ${dot}"></span>${bugCount}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { /* backend not reachable yet */ }
+}
+
+/* ════════════════════ run detail view ════════════════════ */
+function openRun(runId) {
+  currentRunId = runId;
+  trackerMaxIdx = -1;
+  document.getElementById('newRunView').style.display = 'none';
+  document.getElementById('trendsView').style.display = 'none';
+  document.getElementById('runView').style.display = 'block';
+  document.querySelectorAll('.run-item').forEach(el => el.classList.remove('active'));
+  refreshRunList();
+
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('bugList').innerHTML = '';
+  document.getElementById('journeyGrid').innerHTML = '';
+  document.getElementById('a11yContent').innerHTML = '';
+  document.getElementById('reportBox').innerHTML = '';
+  document.getElementById('regressionBanner').innerHTML = '';
+  renderTracker();
+  switchTab('logs');
+
+  if (sseSource) sseSource.close();
+  sseSource = new EventSource(`${API}/stream/${runId}`);
+  sseSource.onmessage = (e) => {
+    const entry = JSON.parse(e.data);
+    if (entry.msg === 'DONE') {
+      sseSource.close();
+      loadRunResults(runId);
+      return;
+    }
+    appendLog(entry);
+    advanceTracker(entry.msg);
+  };
+  sseSource.onerror = () => { sseSource.close(); };
+
+  // While the pipeline runs, /status grows progressively richer (bugs after
+  // QA, then again after debate and impact scoring; coverage, screenshots,
+  // and a11y results right after the crawl) — poll so the dashboard reflects
+  // that without the user having to refresh.
+  if (pollHandle) clearInterval(pollHandle);
+  pollHandle = setInterval(() => {
+    if (currentRunId === runId) loadRunResults(runId);
+    else clearInterval(pollHandle);
+  }, 2500);
+
+  loadRunResults(runId);
+}
+
+async function cancelCurrentRun() {
+  if (!currentRunId) return;
+  if (!confirm('Cancel this validation run? This stops the browser/crawl immediately.')) return;
+  const btn = document.getElementById('cancelBtn');
+  btn.disabled = true;
+  try {
+    const headers = {};
+    if (apiKey) headers['X-API-Key'] = apiKey;
+    await fetch(`${API}/runs/${currentRunId}/cancel`, { method: 'POST', headers });
+    loadRunResults(currentRunId);
+  } catch (e) {
+    alert('Could not cancel: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function appendLog(entry) {
+  const box = document.getElementById('logBox');
+  const cls = entry.level === 'error' ? 'log-error' : entry.level === 'success' ? 'log-success' : entry.level === 'phase' ? 'log-phase' : 'log-info';
+  const ic  = entry.level === 'error' ? 'xCircle' : entry.level === 'success' ? 'checkCircle' : entry.level === 'phase' ? 'zap' : 'chevronDown';
+  const div = document.createElement('div');
+  div.className = `log-line ${cls}`;
+  div.innerHTML = `${icon(ic,13)}<span>${escapeHtml(entry.msg)}</span>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML;
+}
+
+/* ════════════════════ pipeline tracker ════════════════════ */
+function renderTracker(doneAll=false) {
+  const row = document.getElementById('trackerRow');
+  row.innerHTML = PIPELINE_STAGES.map((s, i) => {
+    let state = 'pending';
+    if (doneAll || i < trackerMaxIdx) state = 'done';
+    else if (i === trackerMaxIdx) state = 'active';
+    return `<div class="t-step ${state}"><div class="t-line"></div><div class="t-dot">${icon(s.icon,15)}</div><div class="t-label">${s.label}</div></div>`;
+  }).join('');
+}
+function advanceTracker(msg) {
+  for (let i = PIPELINE_STAGES.length - 1; i >= 0; i--) {
+    if (PIPELINE_STAGES[i].match.test(msg)) {
+      if (i > trackerMaxIdx) { trackerMaxIdx = i; renderTracker(); }
+      break;
+    }
+  }
+}
+
+/* ════════════════════ load + render full run results ════════════════════ */
+async function loadRunResults(runId) {
+  try {
+    const res = await fetch(`${API}/status/${runId}`);
+    const run = await res.json();
+    if (run.error) return;
+    currentRun = run;
+
+    const statusCls = run.status === 'running' ? 'dot-running' : run.status === 'complete' ? 'dot-complete' : run.status === 'error' ? 'dot-error' : run.status === 'cancelled' ? 'dot-cancelled' : 'dot-queued';
+    document.getElementById('runUrlLabel').textContent = run.url || '';
+    document.getElementById('runStatusBadge').innerHTML = `<span class="status-dot ${statusCls}"></span>${run.status}`;
+    document.getElementById('cancelBtn').style.display = (run.status === 'running' || run.status === 'queued') ? 'inline-flex' : 'none';
+
+    if (run.status === 'complete') { trackerMaxIdx = PIPELINE_STAGES.length; renderTracker(true); }
+
+    if (run.status === 'complete' || run.status === 'error' || run.status === 'cancelled') {
+      if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+    }
+
+    renderStats(run.stats || {});
+    if (run.bugs) renderBugs(run.bugs, run.pm_result || {}, run.videos || []);
+    if (run.vision_analyses) renderJourney(run.screenshots || [], run.vision_analyses);
+    if (run.a11y_results && activeTab === 'a11y') renderA11y(run.a11y_results);
+    if (run.performance_results && activeTab === 'perf') renderPerformance(run.performance_results);
+    if (run.responsive_results && activeTab === 'responsive') renderResponsive(run.responsive_results);
+    if (run.prd_coverage) renderCoverage(run.prd_coverage);
+    if (run.tests) renderTests(run.tests);
+    if (run.status === 'complete') loadRegressionBanner(runId);
+
+    refreshRunList();
+  } catch(e) { /* run might not exist yet right after creation */ }
+}
+
+function renderStats(stats) {
+  const items = [
+    {label:'Critical', value: stats.critical||0, icon:'alertTriangle', cls:'stat-red'},
+    {label:'High',     value: stats.high||0,     icon:'alertTriangle', cls:'stat-red'},
+    {label:'Medium',   value: stats.medium||0,    icon:'info',         cls:'stat-amber'},
+    {label:'Low',      value: stats.low||0,       icon:'info',         cls:'stat-green'},
+    {label:'A11y Issues', value: stats.a11y_issues||0, icon:'accessibility', cls:'stat-amber'},
+    {label:'Avg LCP', value: stats.avg_lcp_ms ? (stats.avg_lcp_ms/1000).toFixed(1)+'s' : '—', icon:'zap', cls:'stat-blue'},
+    {label:'Videos',   value: stats.videos||0,    icon:'video',        cls:'stat-blue'},
+    {label:'Tests',    value: stats.tests||0,     icon:'flask',        cls:'stat-blue'},
+    {label:'Pages Crawled', value: stats.pages_crawled||0, icon:'globe', cls:'stat-blue'},
+    {label:'PRD Coverage', value: (stats.prd_coverage||0)+'%', icon:'clipboard', cls:'stat-green'},
+  ];
+  document.getElementById('statsGrid').innerHTML = items.map(it => `
+    <div class="stat-card">
+      <div class="stat-top">${icon(it.icon,16,'stat-icon')}</div>
+      <div class="stat-value ${it.cls}">${it.value}</div>
+      <div class="stat-label">${it.label}</div>
+    </div>`).join('');
+}
+
+/* ════════════════════ regression banner (vs previous run, same URL) ════════════════════ */
+async function loadRegressionBanner(runId) {
+  try {
+    const res = await fetch(`${API}/runs/${runId}/regression`);
+    const data = await res.json();
+    const box = document.getElementById('regressionBanner');
+    if (data.error || !data.compared_to) { box.innerHTML = ''; return; }
+    box.innerHTML = `
+      <div class="regression-banner">
+        <span class="regression-stat new">${icon('alertTriangle',13)} ${data.new.length} new</span>
+        <span class="regression-stat resolved">${icon('checkCircle',13)} ${data.resolved.length} resolved</span>
+        <span class="regression-stat persisting">${icon('clock',13)} ${data.persisting.length} still open</span>
+        <span class="regression-meta">vs previous run on this URL</span>
+      </div>`;
+  } catch(e) { /* no history yet */ }
+}
+
+/* ════════════════════ bugs tab ════════════════════ */
+function impactMeta(label) {
+  if (/revenue blocker/i.test(label))   return {icon:'alertTriangle', cls:'stat-red'};
+  if (/significant risk/i.test(label))  return {icon:'trendingUp',    cls:'stat-amber'};
+  if (/moderate impact/i.test(label))   return {icon:'info',          cls:'stat-amber'};
+  return {icon:'checkCircle', cls:'stat-green'};
+}
+
+function renderBugs(bugs, pmResult, videos) {
+  const list = document.getElementById('bugList');
+  if (!bugs.length) {
+    list.innerHTML = `<div class="empty">${icon('checkCircle',40)}<div class="empty-text">No validated bugs — looking clean.</div></div>`;
+    return;
+  }
+  const pmMap = {};
+  (pmResult.reviewed_bugs || []).forEach(r => pmMap[r.id] = r);
+  const videoMap = {};
+  videos.forEach(v => videoMap[v.bug_id] = v);
+
+  list.innerHTML = bugs.map((b, idx) => {
+    const sevRaw = (b.final_severity || b.severity || 'medium').toLowerCase();
+    const sev = ['critical','high','medium','low'].includes(sevRaw) ? sevRaw : 'medium';
+    const im = impactMeta(b.impact_label || '');
+    const pm = pmMap[b.id];
+    const vid = videoMap[b.id];
+    const pmCls = pm && pm.prd_classification === 'PRD_VIOLATION' ? 'pm-violation' : pm && pm.prd_classification === 'NICE_TO_FIX' ? 'pm-nice' : 'pm-oos';
+
+    return `
+    <div class="bug-card">
+      <div class="bug-header" onclick="toggleBug(${idx})">
+        <span class="severity-badge sev-${sev}">${sev}</span>
+        <span class="bug-title"><span class="bug-id">${escapeHtml(b.id||'')}</span>${escapeHtml(b.title||'Untitled')}</span>
+        <span class="impact-pill ${im.cls}">${icon(im.icon,13)} ${b.impact_score ?? 0}/100</span>
+        ${icon('chevronDown',15,'')}
+      </div>
+      <div class="bug-body" id="bugbody-${idx}">
+        <div class="tag-row">
+          <span class="tag">${icon('mapPin',12)} ${escapeHtml(b.url||'—')}</span>
+          ${b.estimated_fix_time ? `<span class="tag">${icon('clock',12)} ${escapeHtml(b.estimated_fix_time)}</span>` : ''}
+          ${b.estimated_loss ? `<span class="tag">${icon('trendingUp',12)} ${escapeHtml(b.estimated_loss)}</span>` : ''}
+          ${vid ? `<span class="tag tag-video">${icon('video',12)} Repro video</span>` : ''}
+        </div>
+
+        ${(b.steps_to_reproduce||[]).length ? `
+        <div class="bug-field">
+          <div class="bug-field-label">${icon('layers',12)} Steps to reproduce</div>
+          <div class="bug-field-value">${b.steps_to_reproduce.map((s,i)=>`${i+1}. ${escapeHtml(s)}`).join('<br>')}</div>
+        </div>` : ''}
+
+        ${b.expected ? `<div class="bug-field"><div class="bug-field-label">${icon('checkCircle',12)} Expected</div><div class="bug-field-value">${escapeHtml(b.expected)}</div></div>` : ''}
+        ${b.actual ? `<div class="bug-field"><div class="bug-field-label">${icon('xCircle',12)} Actual</div><div class="bug-field-value">${escapeHtml(b.actual)}</div></div>` : ''}
+        ${b.reasoning ? `<div class="bug-field"><div class="bug-field-label">${icon('scale',12)} Why this verdict</div><div class="bug-field-value">${escapeHtml(b.reasoning)}</div></div>` : ''}
+        ${b.fix_recommendation ? `<div class="bug-field"><div class="bug-field-label">${icon('zap',12)} Suggested fix</div><div class="bug-field-value">${escapeHtml(b.fix_recommendation)}</div></div>` : ''}
+
+        ${pm ? `
+        <div class="pm-block">
+          <div style="display:flex; align-items:center; gap:9px; margin-bottom:7px;">
+            ${icon('briefcase',14)}<span style="font-weight:700; font-size:12.5px;">PM Review</span>
+            <span class="pm-badge ${pmCls}">${escapeHtml((pm.prd_classification||'').replace(/_/g,' '))}</span>
+            ${pm.priority_score!=null ? `<span class="tag" style="margin-left:auto;">${icon('barChart',11)} priority ${Number(pm.priority_score)||0}/10</span>` : ''}
+          </div>
+          ${pm.violated_requirement ? `<div class="bug-field-value" style="margin-bottom:5px;"><strong style="color:var(--text);">Requirement:</strong> ${escapeHtml(pm.violated_requirement)}</div>` : ''}
+          ${pm.pm_note ? `<div class="bug-field-value">${escapeHtml(pm.pm_note)}</div>` : ''}
+        </div>` : ''}
+
+        ${vid ? `<video class="repro" controls src="${escapeHtml(vid.url)}"></video>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBug(idx) {
+  document.getElementById(`bugbody-${idx}`).classList.toggle('open');
+}
+
+/* ════════════════════ journey tab ════════════════════ */
+function renderJourney(screenshots, analyses) {
+  const grid = document.getElementById('journeyGrid');
+  if (!screenshots.length) {
+    grid.innerHTML = `<div class="empty">${icon('eye',40)}<div class="empty-text">No screenshots captured yet.</div></div>`;
+    return;
+  }
+  const byStep = {};
+  analyses.forEach(a => byStep[a.step] = a);
+
+  const items = screenshots.map(fname => {
+    const m = fname.match(/_step(\d+)_/);
+    const step = m ? parseInt(m[1], 10) : 0;
+    return {fname, step, analysis: byStep[step]};
+  }).sort((a,b) => a.step - b.step);
+
+  grid.innerHTML = items.map(it => {
+    const a = it.analysis;
+    const health = a ? (a.overall_health || 'good') : 'good';
+    const healthCls = health === 'critical' ? 'health-critical' : health === 'warning' ? 'health-warning' : 'health-good';
+    const healthIcon = health === 'critical' ? 'xCircle' : health === 'warning' ? 'alertTriangle' : 'checkCircle';
+    const desc = a ? (a.page_description || '') : '';
+    const url = (a && a.url) || '';
+    const bugCount = a ? (a.potential_bugs||[]).length : 0;
+    return `
+    <div class="journey-card" onclick="openLightbox('${API}/screenshots/${it.fname}')">
+      <img class="journey-thumb" src="${API}/screenshots/${it.fname}" loading="lazy" alt="step ${it.step}">
+      <div class="journey-info">
+        <div class="journey-step">${icon('layers',11)} Step ${it.step}${url ? ' · '+escapeHtml(truncate(url,28)) : ''}</div>
+        <div class="health-badge ${healthCls}">${icon(healthIcon,11)} ${escapeHtml(health)}</div>
+        <div class="journey-desc">${escapeHtml(truncate(desc,110))}${bugCount ? ` <span style="color:var(--text-faint);">· ${bugCount} flagged</span>` : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function truncate(s, n) { return s && s.length > n ? s.slice(0,n)+'…' : (s||''); }
+
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+/* ════════════════════ accessibility tab ════════════════════ */
+function renderA11y(results) {
+  const box = document.getElementById('a11yContent');
+  if (!results || !results.length) {
+    box.innerHTML = `<div class="empty">${icon('accessibility',40)}<div class="empty-text">No accessibility scan data yet.</div></div>`;
+    return;
+  }
+  box.innerHTML = results.map((page, idx) => {
+    const viols = page.violations || [];
+    const counts = {critical:0, serious:0, moderate:0, minor:0};
+    viols.forEach(v => counts[v.impact] = (counts[v.impact]||0) + 1);
+    const badges = Object.entries(counts).filter(([,n]) => n>0)
+      .map(([imp,n]) => `<span class="a11y-impact-badge a11y-${imp}">${icon('alertTriangle',10)} ${n} ${imp}</span>`).join(' ');
+    return `
+    <div class="a11y-page-card">
+      <div class="a11y-page-header" onclick="toggleA11yPage(${idx})">
+        ${icon('mapPin',13)}
+        <span class="a11y-page-url">${escapeHtml(page.url||'')}</span>
+        ${viols.length ? badges : `<span class="a11y-impact-badge a11y-minor">${icon('checkCircle',10)} clean</span>`}
+        ${icon('chevronDown',14)}
+      </div>
+      <div id="a11ybody-${idx}" style="display:none;">
+        ${page.error ? `<div class="a11y-violation-row" style="color:var(--text-faint);">Scan skipped: ${escapeHtml(page.error)}</div>` : ''}
+        ${viols.map(v => {
+          const imp = ['critical','serious','moderate','minor'].includes(v.impact) ? v.impact : 'minor';
+          return `
+          <div class="a11y-violation-row">
+            <div class="a11y-violation-title"><span class="a11y-impact-badge a11y-${imp}">${imp}</span> ${escapeHtml(v.help||v.id)}</div>
+            <div class="a11y-violation-desc">${escapeHtml(v.description||'')}</div>
+            <div class="a11y-violation-meta">
+              <span>${v.node_count} element${v.node_count===1?'':'s'} affected</span>
+              ${v.help_url ? `<a href="${escapeHtml(v.help_url)}" target="_blank" rel="noopener noreferrer">${icon('externalLink',11)} learn more</a>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleA11yPage(idx) {
+  const el = document.getElementById(`a11ybody-${idx}`);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+/* ════════════════════ performance tab (Core Web Vitals) ════════════════════ */
+const RATING_META = {
+  good:               {icon:'checkCircle',  cls:'a11y-minor',     color:'var(--green)'},
+  needs_improvement:  {icon:'alertTriangle', cls:'a11y-moderate',  color:'var(--amber)'},
+  poor:               {icon:'xCircle',       cls:'a11y-critical',  color:'var(--red)'},
+  unknown:            {icon:'info',          cls:'a11y-minor',     color:'var(--text-faint)'},
+};
+function renderPerformance(results) {
+  const box = document.getElementById('perfContent');
+  if (!results || !results.length) {
+    box.innerHTML = `<div class="empty">${icon('zap',40)}<div class="empty-text">No performance data yet.</div></div>`;
+    return;
+  }
+  box.innerHTML = results.map(r => {
+    if (r.error) {
+      return `<div class="a11y-page-card"><div class="a11y-page-header" style="cursor:default;">
+        ${icon('mapPin',13)}<span class="a11y-page-url">${escapeHtml(r.url||'')}</span>
+        <span class="a11y-impact-badge a11y-minor">measurement skipped</span></div></div>`;
+    }
+    const overall = RATING_META[r.overall_rating] || RATING_META.unknown;
+    const metric = (label, val, unit, key) => {
+      const m = RATING_META[r.ratings?.[key]] || RATING_META.unknown;
+      return `<div style="flex:1; min-width:90px;">
+        <div style="font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px;">${label}</div>
+        <div style="font-size:18px; font-weight:800; color:${m.color};">${val!=null ? val+unit : '—'}</div>
+      </div>`;
+    };
+    return `
+    <div class="a11y-page-card">
+      <div class="a11y-page-header" style="cursor:default;">
+        ${icon('mapPin',13)}
+        <span class="a11y-page-url">${escapeHtml(r.url||'')}</span>
+        <span class="a11y-impact-badge ${overall.cls}">${icon(overall.icon,10)} ${(r.overall_rating||'unknown').replace('_',' ')}</span>
+      </div>
+      <div class="a11y-violation-row" style="display:flex; gap:18px; flex-wrap:wrap;">
+        ${metric('LCP', r.lcp_ms, 'ms', 'lcp')}
+        ${metric('CLS', r.cls, '', 'cls')}
+        ${metric('FCP', r.fcp_ms, 'ms', 'fcp')}
+        ${metric('TTFB', r.ttfb_ms, 'ms', 'ttfb')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════ responsive tab (tablet + mobile) ════════════════════ */
+function renderResponsive(results) {
+  const grid = document.getElementById('responsiveGrid');
+  if (!results || !results.length) {
+    grid.innerHTML = `<div class="empty">${icon('image',40)}<div class="empty-text">No responsive snapshots yet.</div></div>`;
+    return;
+  }
+  grid.innerHTML = results.map(r => {
+    const v = r.vision;
+    const health = v ? (v.overall_health || 'good') : 'good';
+    const healthCls = health === 'critical' ? 'health-critical' : health === 'warning' ? 'health-warning' : 'health-good';
+    const healthIcon = health === 'critical' ? 'xCircle' : health === 'warning' ? 'alertTriangle' : 'checkCircle';
+    return `
+    <div class="journey-card" onclick="openLightbox('${API}/screenshots/${r.screenshot}')">
+      <img class="journey-thumb" src="${API}/screenshots/${r.screenshot}" loading="lazy" alt="${r.label}">
+      <div class="journey-info">
+        <div class="journey-step">${icon('image',11)} ${r.label} · ${r.width}×${r.height}</div>
+        <div class="health-badge ${healthCls}">${icon(healthIcon,11)} ${escapeHtml(health)}</div>
+        <div class="journey-desc">${escapeHtml(truncate(r.url||'',60))}${v && v.page_description ? '<br>'+escapeHtml(truncate(v.page_description,90)) : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════ coverage tab ════════════════════ */
+function renderCoverage(cov) {
+  const box = document.getElementById('coverageContent');
+  if (cov.error || (!cov.covered_pages && !cov.uncovered_pages)) {
+    box.innerHTML = `<div class="empty">${icon('clipboard',40)}<div class="empty-text">No PRD was attached to this run.</div></div>`;
+    return;
+  }
+  const pct = cov.coverage_pct ?? 0;
+  const covered = cov.covered_pages || [];
+  const uncovered = cov.uncovered_pages || [];
+
+  box.innerHTML = `
+    <div class="card-title">${icon('clipboard',17)} PRD Coverage — ${pct}%</div>
+    <div class="coverage-bar"><div class="coverage-fill" style="width:${pct}%"></div></div>
+    <div style="color:var(--text-faint); font-size:12.5px; margin-bottom:6px;">${cov.pages_tested||0} pages tested · ${cov.total_stories||0} user stories in PRD</div>
+    <div class="divider"></div>
+    <div class="page-list">
+      ${covered.map(p => `<div class="page-row">${icon('checkCircle',15,'')} <span style="color:var(--green);">${icon('checkCircle',13)}</span> <strong style="color:var(--text);">${escapeHtml(p.name)}</strong> <span class="url-display" style="margin-left:auto;">${escapeHtml(p.path)}</span></div>`).join('')}
+      ${uncovered.map(p => `<div class="page-row"><span style="color:var(--red);">${icon('xCircle',13)}</span> <strong style="color:var(--text);">${escapeHtml(p.name)}</strong> <span class="url-display" style="margin-left:auto;">${escapeHtml(p.path)}</span></div>`).join('')}
+    </div>`;
+}
+
+/* ════════════════════ tests tab ════════════════════ */
+function renderTests(tests) {
+  const list = document.getElementById('testsList');
+  if (!tests.length) {
+    list.innerHTML = `<div class="empty">${icon('flask',40)}<div class="empty-text">No Playwright tests generated for this run.</div></div>`;
+    return;
+  }
+  list.innerHTML = tests.map(t => `
+    <div class="bug-card">
+      <div class="bug-header" style="cursor:default;">
+        ${icon('flask',16,'')}
+        <span class="bug-title" style="font-family:var(--mono); font-size:13px;">${escapeHtml(t.filename)}</span>
+        <span class="tag" style="margin-left:auto;">${escapeHtml(t.bug_id||'')}</span>
+        <button class="btn btn-sm" data-filename="${escapeHtml(t.filename)}" onclick="viewTest(this.dataset.filename)">${icon('terminal',12)} View</button>
+      </div>
+      <div class="bug-body" id="testbody-${escapeHtml(t.filename)}"></div>
+    </div>`).join('');
+}
+
+async function viewTest(filename) {
+  const body = document.getElementById(`testbody-${filename}`);
+  const isOpen = body.classList.contains('open');
+  if (isOpen) { body.classList.remove('open'); return; }
+  if (!body.dataset.loaded) {
+    const res = await fetch(`${API}/tests/${filename}`);
+    const data = await res.json();
+    body.innerHTML = `<pre style="font-family:var(--mono); font-size:12px; color:var(--text-dim); white-space:pre-wrap; overflow-x:auto; padding-top:14px;">${escapeHtml(data.content||data.error||'')}</pre>`;
+    body.dataset.loaded = '1';
+  }
+  body.classList.add('open');
+}
+
+/* ════════════════════ report tab ════════════════════ */
+let lastReportMd = '';
+async function loadReport() {
+  const box = document.getElementById('reportBox');
+  box.innerHTML = `<div class="empty">${icon('loader',32,'spin')}<div class="empty-text">Loading report…</div></div>`;
+  try {
+    const res = await fetch(`${API}/report/${currentRunId}`);
+    const data = await res.json();
+    if (data.error) {
+      box.innerHTML = `<div class="empty">${icon('fileText',40)}<div class="empty-text">Report not ready yet — finish the run first.</div></div>`;
+      return;
+    }
+    lastReportMd = data.report;
+    box.innerHTML = mdToHtml(data.report);
+  } catch (e) {
+    box.innerHTML = `<div class="empty">${icon('alertTriangle',40)}<div class="empty-text">Could not load report.</div></div>`;
+  }
+}
+function downloadReport() {
+  if (!lastReportMd) { loadReport(); return; }
+  const blob = new Blob([lastReportMd], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${currentRunId}_report.md`;
+  a.click();
+}
+
+/* tiny markdown -> html renderer (headings, bold, tables, lists) — good enough
+   for our own generated reports, not a general-purpose parser */
+function mdToHtml(md) {
+  const lines = md.split('\n');
+  let html = '', inTable = false, tableRows = [];
+  const flushTable = () => {
+    if (!tableRows.length) return;
+    const [header, , ...rows] = tableRows;
+    html += '<table><thead><tr>' + header.map(c=>`<th>${inline(c)}</th>`).join('') + '</tr></thead><tbody>';
+    rows.forEach(r => html += '<tr>' + r.map(c=>`<td>${inline(c)}</td>`).join('') + '</tr>');
+    html += '</tbody></table>';
+    tableRows = []; inTable = false;
+  };
+  const inline = (s) => escapeHtml(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`(.+?)`/g,'<code>$1</code>');
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.startsWith('|')) {
+      inTable = true;
+      tableRows.push(line.slice(1,-1).split('|').map(c=>c.trim()));
+      continue;
+    } else if (inTable) flushTable();
+
+    if (!line) continue;
+    else if (line.startsWith('### ')) html += `<h3>${inline(line.slice(4))}</h3>`;
+    else if (line.startsWith('## '))  html += `<h2>${inline(line.slice(3))}</h2>`;
+    else if (line.startsWith('# '))   html += `<h1>${inline(line.slice(2))}</h1>`;
+    else if (line === '---') html += '<div class="divider"></div>';
+    else if (line.startsWith('- ')) html += `<p>&nbsp;&nbsp;•&nbsp; ${inline(line.slice(2))}</p>`;
+    else html += `<p>${inline(line)}</p>`;
+  }
+  flushTable();
+  return html;
+}
+
+/* ════════════════════ trends view ════════════════════ */
+function showTrends() {
+  currentRunId = null;
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+  document.getElementById('newRunView').style.display = 'none';
+  document.getElementById('runView').style.display = 'none';
+  document.getElementById('trendsView').style.display = 'block';
+  document.querySelectorAll('.run-item').forEach(el => el.classList.remove('active'));
+  loadUrlPicker();
+}
+
+let selectedTrendUrl = null;
+
+async function loadUrlPicker() {
+  const box = document.getElementById('urlPickerList');
+  box.innerHTML = `<div class="empty-text" style="padding:8px 0;">${icon('loader',15,'spin')} Loading...</div>`;
+  try {
+    const res = await fetch(`${API}/urls`);
+    const urls = await res.json();
+    if (!urls.length) {
+      box.innerHTML = `<div class="empty">${icon('trendingUp',36)}<div class="empty-text">No completed runs yet — finish a validation run and its history will show up here.</div></div>`;
+      document.getElementById('trendsChartsWrap').innerHTML = '';
+      return;
+    }
+    box.innerHTML = urls.map(u => {
+      let host = u.url; try { host = new URL(u.url).hostname; } catch(e) {}
+      return `<div class="url-pick-row ${u.url===selectedTrendUrl?'active':''}" data-url="${escapeHtml(u.url)}" onclick="selectTrendUrl(this.dataset.url, this)">
+        ${icon('globe',14)} <strong style="flex:1;">${escapeHtml(host)}</strong>
+        <span class="tag">${u.run_count} run${u.run_count===1?'':'s'}</span>
+      </div>`;
+    }).join('');
+    const initial = selectedTrendUrl && urls.some(u=>u.url===selectedTrendUrl) ? selectedTrendUrl : urls[0].url;
+    selectTrendUrl(initial, document.querySelector('.url-pick-row'));
+  } catch(e) {
+    box.innerHTML = `<div class="empty-text">Could not load history.</div>`;
+  }
+}
+
+async function selectTrendUrl(url, el) {
+  selectedTrendUrl = url;
+  document.querySelectorAll('.url-pick-row').forEach(row => row.classList.remove('active'));
+  if (el) el.classList.add('active');
+  await loadTrendsChart(url);
+}
+
+function svgLineChart(series, opts={}) {
+  const W = 640, H = 180, PAD = 38;
+  const allPoints = series.flatMap(s => s.values).filter(p => p.y != null);
+  if (!allPoints.length) return `<div class="empty-text" style="padding:20px 0;">No data.</div>`;
+  const xs = allPoints.map(p=>p.x);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const yMax = opts.yMaxFixed || Math.max(1, ...allPoints.map(p=>p.y));
+  const xScale = x => xMax === xMin ? W/2 : PAD + (x-xMin)/(xMax-xMin)*(W-2*PAD);
+  const yScale = y => H-PAD - (y/yMax)*(H-2*PAD);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block; height:180px;">`;
+  for (let i = 0; i <= 3; i++) {
+    const gy = (PAD + i*(H-2*PAD)/3).toFixed(1);
+    svg += `<line x1="${PAD}" y1="${gy}" x2="${W-PAD}" y2="${gy}" stroke="var(--border-soft)" stroke-width="1"/>`;
+  }
+  series.forEach(s => {
+    const pts = s.values.filter(p => p.y != null);
+    if (!pts.length) return;
+    if (pts.length === 1) {
+      svg += `<circle cx="${xScale(pts[0].x).toFixed(1)}" cy="${yScale(pts[0].y).toFixed(1)}" r="4" fill="${s.color}"/>`;
+      return;
+    }
+    const path = pts.map((p,i) => `${i===0?'M':'L'} ${xScale(p.x).toFixed(1)} ${yScale(p.y).toFixed(1)}`).join(' ');
+    svg += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    pts.forEach(p => svg += `<circle cx="${xScale(p.x).toFixed(1)}" cy="${yScale(p.y).toFixed(1)}" r="3.5" fill="${s.color}"/>`);
+  });
+  svg += `</svg>`;
+  return svg;
+}
+
+async function loadTrendsChart(url) {
+  const wrap = document.getElementById('trendsChartsWrap');
+  wrap.innerHTML = `<div class="empty-text" style="padding:30px 0; text-align:center;">${icon('loader',18,'spin')} Loading trend...</div>`;
+  try {
+    const res = await fetch(`${API}/trends?url=${encodeURIComponent(url)}`);
+    const data = await res.json();
+    const points = data.points || [];
+    if (!points.length) { wrap.innerHTML = `<div class="empty-text" style="padding:20px 0;">No data yet for this URL.</div>`; return; }
+
+    const fmt = ts => ts ? new Date(ts*1000).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : '';
+    const bugsSeries = [
+      {label:'Total bugs', color:'var(--accent)', values: points.map(p=>({x:p.created_at, y:p.total_bugs}))},
+      {label:'Critical',   color:'var(--red)',    values: points.map(p=>({x:p.created_at, y:p.critical}))},
+    ];
+    const covSeries  = [{label:'PRD Coverage %', color:'var(--accent-2)', values: points.map(p=>({x:p.created_at, y:p.prd_coverage}))}];
+    const a11ySeries = [{label:'A11y issues',     color:'var(--amber)',   values: points.map(p=>({x:p.created_at, y:p.a11y_issues}))}];
+
+    wrap.innerHTML = `
+      <div class="chart-card">
+        <div class="chart-legend">
+          <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--accent)"></span>Total bugs</span>
+          <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--red)"></span>Critical</span>
+        </div>
+        ${svgLineChart(bugsSeries)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-legend"><span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--accent-2)"></span>PRD Coverage %</span></div>
+        ${svgLineChart(covSeries, {yMaxFixed: 100})}
+      </div>
+      <div class="chart-card">
+        <div class="chart-legend"><span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--amber)"></span>Accessibility issues</span></div>
+        ${svgLineChart(a11ySeries)}
+      </div>
+      <div style="font-size:11.5px; color:var(--text-faint); margin-top:6px; text-align:center;">
+        ${points.length} run${points.length===1?'':'s'} tracked · ${fmt(points[0].created_at)} to ${fmt(points[points.length-1].created_at)}
+      </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty-text">Could not load trend data.</div>`;
+  }
+}
+
+/* ════════════════════ init ════════════════════ */
+refreshRunList();
+setInterval(() => { if (!currentRunId) refreshRunList(); }, 4000);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+</body>
+</html>

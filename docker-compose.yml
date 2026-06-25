@@ -1,0 +1,12 @@
+services:
+  productvalidation-os:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Keep screenshots/videos/reports/the SQLite run history across
+      # container restarts and rebuilds.
+      - ./outputs:/app/outputs
+    env_file:
+      - .env
+    restart: unless-stopped
