@@ -16,6 +16,35 @@ a ready-to-run Playwright test — all visible live from one dashboard.
 [![Playwright](https://img.shields.io/badge/browser-Playwright-2EAD33)](https://playwright.dev/)
 [![Gemini](https://img.shields.io/badge/vision-Gemini-8E75B2)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://flowlens-ai.onrender.com)
+
+**Live demo:** [flowlens-ai.onrender.com](https://flowlens-ai.onrender.com)
+— hosted on Render's free tier, so the first request after a quiet period
+can take 30-60s to wake the instance back up. Ask for the dashboard's
+`X-API-Key` if you want to actually start a run rather than just look around.
+
+---
+
+## Screenshots
+
+A full run against [books.toscrape.com](https://books.toscrape.com), a
+public scraping/testing sandbox site — crawl, vision analysis, accessibility
+audit, performance metrics, and the responsive check, all from one run.
+
+**Run overview** — live stats as each pipeline stage finishes:
+![Run overview](screenshots/01_run_overview.png)
+
+**Journey** — Gemini Vision's read of every page it landed on:
+![Journey / vision analysis](screenshots/02_journey.png)
+
+**Accessibility** — axe-core results per page, grouped by impact:
+![Accessibility audit](screenshots/03_a11y.png)
+
+**Performance** — Core Web Vitals per page, rated against Google's thresholds:
+![Performance metrics](screenshots/04_performance.png)
+
+**Responsive** — the same pages re-checked at tablet and mobile widths:
+![Responsive check](screenshots/05_responsive.png)
 
 ---
 
