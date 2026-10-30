@@ -501,7 +501,7 @@ async def list_models():
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     return {
         "status": "ok", "version": "3.0.0",
@@ -515,7 +515,7 @@ async def health():
 # single `ngrok http 8000` tunnel exposes the whole app (no second 3000 port
 # to juggle).
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def dashboard():
     if not DASHBOARD_INDEX.exists():
         return JSONResponse({"error": "dashboard/index.html not found"}, status_code=404)
