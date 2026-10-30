@@ -218,7 +218,7 @@ def node_responsive(state: AgentState) -> AgentState:
         if u and u not in seen:
             seen.add(u)
             visited.append(u)
-    pages = visited[:5] if visited else [state["target_url"]]
+    pages = visited[:3] if visited else [state["target_url"]]
     viewports = [("tablet", 768, 1024), ("mobile", 390, 844)]
 
     async def _check():
