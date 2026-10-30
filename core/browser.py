@@ -106,6 +106,13 @@ class BrowserSession:
             return False
 
     async def snapshot_at_viewport(self, url: str, width: int, height: int, label: str) -> dict | None:
+        try:
+            return await asyncio.wait_for(self._snapshot_at_viewport(url, width, height, label), 40)
+        except Exception as e:
+            print(f"[session:{self.session_id}] Responsive snapshot ({label}) timed out/failed: {type(e).__name__}")
+            return None
+
+    async def _snapshot_at_viewport(self, url: str, width: int, height: int, label: str) -> dict | None:
         """Loads `url` in a fresh, throwaway context at the given viewport
         size and screenshots it — used for responsive checks. Doesn't touch
         the main crawl page/context at all."""
@@ -115,12 +122,13 @@ class BrowserSession:
         try:
             ctx = await self._browser.new_context(viewport={"width": width, "height": height})
             page = await ctx.new_page()
-            await page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=15_000)
             await page.wait_for_timeout(700)
             fname = f"{self.session_id}_responsive_{label}_{self.step:03d}.png"
             self.step += 1
             fpath = SCREENSHOTS_DIR / fname
-            await page.screenshot(path=str(fpath), full_page=False)
+            await page.screenshot(path=str(fpath), full_page=False,
+                                      animations="disabled", timeout=10_000)
             return {
                 "label": label, "width": width, "height": height,
                 "url": url, "screenshot": fname,
