@@ -40,7 +40,11 @@ class BrowserSession:
         self._playwright = await async_playwright().start()
         self._browser = await self._playwright.chromium.launch(
             headless=self.headless,
-            args=["--no-sandbox", "--disable-setuid-sandbox"],
+            args=[
+                "--no-sandbox", "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",   # /dev/shm is tiny in Docker/Render -> renderer hangs
+                "--disable-gpu",
+            ],
         )
         self._context = await self._browser.new_context(
             viewport={"width": 1280, "height": 800},
@@ -49,8 +53,11 @@ class BrowserSession:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/124.0.0.0 Safari/537.36"
             ),
-            record_video_dir=str(Path(__file__).parent.parent / "outputs" / "videos"),
+            # NOTE: no record_video_dir here. Video of the main crawl context was
+            # never used (VideoRecorder makes its own context) and recording
+            # makes screenshots time out on low-CPU hosts like Render free tier.
         )
+        self._context.set_default_timeout(15_000)
         self.page = await self._context.new_page()
 
         # capture JS errors
@@ -235,13 +242,30 @@ class BrowserSession:
         self.step += 1
         fname = f"{self.session_id}_step{self.step:03d}_{label}.png"
         fpath = SCREENSHOTS_DIR / fname
+        # animations="disabled" stops Playwright waiting on endless CSS/JS
+        # animations; short timeout + one retry instead of a 30s stall.
+        for attempt, tmo in enumerate((10_000, 10_000), start=1):
+            try:
+                await self.page.screenshot(path=str(fpath), full_page=False,
+                                           animations="disabled", caret="initial",
+                                           timeout=tmo)
+                b64 = base64.b64encode(fpath.read_bytes()).decode()
+                return {"path": str(fpath), "filename": fname, "base64": b64}
+            except Exception as e:
+                print(f"[screenshot error] attempt {attempt}: {str(e)[:120]}")
+                try:
+                    await self.page.wait_for_timeout(1000)
+                except Exception:
+                    break
+        # last resort: raw CDP capture, bypasses Playwright's font/animation waits
         try:
-            await self.page.screenshot(path=str(fpath), full_page=False)
-            # also encode as base64 for LLM vision calls
-            b64 = base64.b64encode(fpath.read_bytes()).decode()
-            return {"path": str(fpath), "filename": fname, "base64": b64}
+            cdp = await self._context.new_cdp_session(self.page)
+            res = await asyncio.wait_for(cdp.send("Page.captureScreenshot", {"format": "png"}), 10)
+            fpath.write_bytes(base64.b64decode(res["data"]))
+            print("[screenshot] recovered via CDP fallback")
+            return {"path": str(fpath), "filename": fname, "base64": res["data"]}
         except Exception as e:
-            print(f"[screenshot error] {e}")
+            print(f"[screenshot error] CDP fallback failed: {str(e)[:120]}")
             return None
 
     def get_latest_screenshot_b64(self) -> str | None:
