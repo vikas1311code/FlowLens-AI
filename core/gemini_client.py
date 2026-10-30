@@ -46,7 +46,7 @@ def get_client(api_key: str | None = None):
         _clients[key] = genai.Client(api_key=key)
     return _clients[key]
 
-def generate(prompt, image_bytes=None, max_retries=5, api_key=None, model=None):
+def generate(prompt, image_bytes=None, max_retries=3, api_key=None, model=None):
     """
     Single entry point for all Gemini calls.
     Handles 429 retry with exponential backoff.
@@ -76,7 +76,7 @@ def generate(prompt, image_bytes=None, max_retries=5, api_key=None, model=None):
         except Exception as e:
             err = str(e)
             if ("429" in err or "quota" in err.lower() or "503" in err or "unavailable" in err.lower()) and attempt < max_retries - 1:
-                wait = 60 * (attempt + 1)
+                wait = 15 * (attempt + 1)   # was 60s*n -> could freeze a run for 10+ min
                 print(f"  [Gemini] Rate limit hit. Waiting {wait}s (attempt {attempt+1}/{max_retries})...")
                 time.sleep(wait)
             elif "403" in err:
