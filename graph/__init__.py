@@ -58,6 +58,15 @@ class AgentState(TypedDict):
     final_report:     str
 
 
+async def _safe(coro, seconds: int, fallback: dict, what: str):
+    """Hard time limit so one hung page-evaluate can't freeze the whole run."""
+    try:
+        return await asyncio.wait_for(coro, timeout=seconds)
+    except Exception as e:
+        print(f"  [{what}] skipped ({type(e).__name__}) - took longer than {seconds}s")
+        return fallback
+
+
 # ── node functions ────────────────────────────────────────────────────────
 
 def node_crawl(state: AgentState) -> AgentState:
@@ -111,9 +120,9 @@ def node_crawl(state: AgentState) -> AgentState:
             if shots:
                 vision_agent.analyze_screenshot(str(shots[-1]),
                                                 entry["step"], session.page.url)
-            a11y = await accessibility.scan_page(session.page, session.page.url, entry["step"])
+            a11y = await _safe(accessibility.scan_page(session.page, session.page.url, entry["step"]), 30, {"url": session.page.url, "step": entry["step"], "violations": [], "error": "timed out"}, "a11y")
             a11y_results.append(a11y)
-            perf = await performance.measure_page(session.page, session.page.url, entry["step"])
+            perf = await _safe(performance.measure_page(session.page, session.page.url, entry["step"]), 20, {"url": session.page.url, "step": entry["step"], "error": "timed out"}, "perf")
             performance_results.append(perf)
             prev_b64   = curr_b64
             steps_done = 1
@@ -168,9 +177,9 @@ def node_crawl(state: AgentState) -> AgentState:
                         if shots:
                             vision_agent.analyze_screenshot(str(shots[-1]),
                                                             entry2["step"], session.page.url)
-                        a11y = await accessibility.scan_page(session.page, session.page.url, entry2["step"])
+                        a11y = await _safe(accessibility.scan_page(session.page, session.page.url, entry2["step"]), 30, {"url": session.page.url, "step": entry2["step"], "violations": [], "error": "timed out"}, "a11y")
                         a11y_results.append(a11y)
-                        perf = await performance.measure_page(session.page, session.page.url, entry2["step"])
+                        perf = await _safe(performance.measure_page(session.page, session.page.url, entry2["step"]), 20, {"url": session.page.url, "step": entry2["step"], "error": "timed out"}, "perf")
                         performance_results.append(perf)
                         prev_b64   = curr_b64
                         steps_done += 1
